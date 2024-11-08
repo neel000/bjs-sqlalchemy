@@ -65,6 +65,9 @@ class ProxyRequestTest(TestClient):
         key = ProxyRequest(params="jhdfkjfgfhg").keys()
         assert key == ["jhdfkjfgfhg"]
 
+        key = ProxyRequest(params="?").keys()
+        assert key == []
+
         key = ProxyRequest(params="jhdfkjfgfhg=111").keys()
         assert key == ["jhdfkjfgfhg"]
 
@@ -523,6 +526,21 @@ class PageNoPaginationTest(TestClient):
 
 class LimitOffSetPaginationTest(TestClient):
     def test_valid_limit_offset(self):
+        params = {"limit":""}
+        data = LimitOffSetPagination(params=params, queryset=None)
+        assert data.limit == None
+        assert data.offset == 0
+
+        params = {"limit":"hdj"}
+        data = LimitOffSetPagination(params=params, queryset=None)
+        assert data.limit == None
+        assert data.offset == 0
+
+        params = {"limit":"10.5"}
+        data = LimitOffSetPagination(params=params, queryset=None)
+        assert data.limit == None
+        assert data.offset == 0
+
         params = {"limit":"10"}
         data = LimitOffSetPagination(params=params, queryset=None)
         assert data.limit == int(params["limit"])
@@ -546,11 +564,18 @@ class LimitOffSetPaginationTest(TestClient):
     async def test_main_function_withoutpassing_limit_or_invalid_limit(self):
         session = Session()
         query = session.query(Users)
+        count = query.count()
         data = await LimitOffSetPagination(params={}, queryset=query).main()
-        assert len(data["results"]) == query.count()
+        assert len(data["results"]) == count
 
         data = await LimitOffSetPagination(params={"limit":"opop"}, queryset=query).main()
-        assert len(data["results"]) == query.count()
+        assert len(data["results"]) == count
+
+        data = await LimitOffSetPagination(params={"limit":"10.5"}, queryset=query).main()
+        assert len(data["results"]) == count
+
+        data = await LimitOffSetPagination(params={"limit":""}, queryset=query).main()
+        assert len(data["results"]) == count
         session.close()
     
     async def test_main_function_with_passing_valid_limit_offset(self):
@@ -584,5 +609,3 @@ if __name__=="__main__":
     PageNoPaginationTest().main()
     LimitOffSetPaginationTest().main()
     ProxyRequestTest().main()
-
-    
