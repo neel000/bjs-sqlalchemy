@@ -62,6 +62,12 @@ class ProxyRequestTest(TestClient):
         key = ProxyRequest(params="").keys()
         assert key == []
 
+        key = ProxyRequest(params="jhdfkjfgfhg").keys()
+        assert key == ["jhdfkjfgfhg"]
+
+        key = ProxyRequest(params="jhdfkjfgfhg=111").keys()
+        assert key == ["jhdfkjfgfhg"]
+
         key = ProxyRequest(params="?name=Indranil").keys()
         assert key == ["name"]
 
@@ -78,14 +84,24 @@ class ProxyRequestTest(TestClient):
         value_list = ProxyRequest(params="").getlist("name")
         assert value_list == []
 
-        key = ProxyRequest(params="?name=Indranil").getlist("name")
-        assert key == ["Indranil"]
+        value_list = ProxyRequest(params="?name=Indranil").getlist("name")
+        assert value_list == ["Indranil"]
 
-        key = ProxyRequest(params="?name=Indranil&name=Indranil2").getlist("name")
-        assert key == ["Indranil", "Indranil2"]
+        value_list = ProxyRequest(params="?name=Indranil&name=Indranil2").getlist("name")
+        assert value_list == ["Indranil", "Indranil2"]
 
-        key = ProxyRequest(params="?name=Indranil&name=Indranil2&age=30").getlist("age")
-        assert key == ["30"]
+        value_list = ProxyRequest(params="?name=Indranil&name=Indranil2&age=30").getlist("age")
+        assert value_list == ["30"]
+
+        value_list = ProxyRequest(params="?name=Indranil&name=Indranil2&age=30&age=31")
+        
+        age_data = value_list.getlist("age")
+        age_data.sort()
+        assert age_data == ['30', '31']
+
+        name_data = value_list.getlist("name")
+        name_data.sort()
+        assert name_data == ['Indranil', 'Indranil2']
 
 class FilterTest(TestClient):
     proxy = ProxyRequest
@@ -569,3 +585,4 @@ if __name__=="__main__":
     LimitOffSetPaginationTest().main()
     ProxyRequestTest().main()
 
+    
