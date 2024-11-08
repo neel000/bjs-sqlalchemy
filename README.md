@@ -53,7 +53,7 @@ class Item(BaseModel):
 ```bash
 from sqlalchemy filters import FilterSet
 from ..models import ProductCategory
-from bjs_sqlalchemy.proxy_request import ProxyRequest
+
 
 class ProductCategoryFilter(FilterSet):
     class Meta:
@@ -70,6 +70,7 @@ class ProductCategoryFilter(FilterSet):
 
 # Filter Data
 ```bash
+from bjs_sqlalchemy.proxy_request import ProxyRequest
 proxy_request = ProxyRequest("?name=Indranil")
 query = session.query(ProductCategory)
 filter_data = ProductCategoryFilter(params=proxy_request, queryset=query)
