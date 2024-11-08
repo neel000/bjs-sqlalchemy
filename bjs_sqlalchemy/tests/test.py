@@ -1,5 +1,5 @@
-
-import sys, os
+import sys
+import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from proxy_request import ProxyRequest
 from models import Session, Users, Address, Contact, ContactDetail
@@ -568,3 +568,4 @@ if __name__=="__main__":
     PageNoPaginationTest().main()
     LimitOffSetPaginationTest().main()
     ProxyRequestTest().main()
+
