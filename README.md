@@ -25,8 +25,8 @@ This package will help you to filtering your data on sqlalchemy query..
     }
 
 ## Usages
-
 #Sqlalchemy Models
+```bash
 class ProductCategory(BaseModel):
     __tablename__ = "ProductCategory"
 
@@ -37,7 +37,6 @@ class ProductCategory(BaseModel):
 
 class ProductSubCategory(BaseModel):
     __tablename__ = "ProductSubCategory"
-    
     name = Column(String(length=50), unique=True, doc="Subcategory name")
     category_id = Column(Integer, ForeignKey("ProductCategory.id"))
     category = relationship("ProductCategory", back_populates="sub_category")
@@ -49,8 +48,9 @@ class Item(BaseModel):
     name = Column(String(length=50), unique=True, doc="Subcategory name")
     sub_category_id = Column(Integer, ForeignKey("ProductSubCategory.id"))
     sub_category = relationship("ProductSubCategory", back_populates="item")
-
+```
 # Sqlalchemy Filters
+```bash
 from sqlalchemy filters import FilterSet
 from ..models import ProductCategory
 
@@ -65,10 +65,11 @@ class ProductCategoryFilter(FilterSet):
             "sub_category__item__name":True,
             "name__is":False
         }
-
+```
 # python setup.py sdist bdist_wheel
 ## Installation
 Instructions on how to install your package.
 
 ```bash
 pip install bjs-sqlalchemy
+```
