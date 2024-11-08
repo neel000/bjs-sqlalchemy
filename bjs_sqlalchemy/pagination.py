@@ -87,4 +87,4 @@ class LimitOffSetPagination:
         if not self.limit:
             return {"results":self.queryset.all()}
         return await self.__pagination()
-    
+

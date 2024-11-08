@@ -1,13 +1,9 @@
 
-class RequestParamsProxy:
+class ProxyRequest:
     def __init__(self, params:str=""):
         self.params = params if not params.startswith("?") else params[1:]
     
-    def extract_key_dict(self):
-        pass
-
     def getlist(self, key):
-        # params = 
         data = []
         params = self.params.split("&")
         for i in params:
@@ -21,9 +17,9 @@ class RequestParamsProxy:
     def keys(self):
         data = set()
         params = self.params.split("&")
-
+        
         for i in params:
             y = i.split("=")
-            data.add(y[0])
+            if y[0]:
+                data.add(y[0])
         return list(data)
-

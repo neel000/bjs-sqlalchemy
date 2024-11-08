@@ -1,7 +1,7 @@
 
 import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from request_params import RequestParamsProxy
+from proxy_request import ProxyRequest
 from models import Session, Users, Address, Contact, ContactDetail
 from filters import FilterSet
 from pagination import PageNoPagination, LimitOffSetPagination
@@ -56,16 +56,53 @@ class TestClient:
             print(f"PASS-TEST-{x}, {test}")
             x+=1
 
+class ProxyRequestTest(TestClient):
+    
+    def test_get_key(self):
+        key = ProxyRequest(params="").keys()
+        assert key == []
+
+        key = ProxyRequest(params="?name=Indranil").keys()
+        assert key == ["name"]
+
+        key = ProxyRequest(params="?name=Indranil&name=Indranil2").keys()
+        assert key == ["name"]
+
+        key = ProxyRequest(params="?name=Indranil&name=Indranil2&age=30").keys()
+        key.sort()
+        result = ["name", "age"]
+        result.sort()
+        assert key == result
+
+    def test_get_getlist(self):
+        value_list = ProxyRequest(params="").getlist("name")
+        assert value_list == []
+
+        key = ProxyRequest(params="?name=Indranil").getlist("name")
+        assert key == ["Indranil"]
+
+        key = ProxyRequest(params="?name=Indranil&name=Indranil2").getlist("name")
+        assert key == ["Indranil", "Indranil2"]
+
+        key = ProxyRequest(params="?name=Indranil&name=Indranil2&age=30").getlist("age")
+        assert key == ["30"]
+
 class FilterTest(TestClient):
-    proxy = RequestParamsProxy
+    proxy = ProxyRequest
     user_filter_class = UserFilter
     address_filter_class = AddressFilter
     
-   #Equal Operator test (=)
     def get_filter(self, filter_class, params, query):
         filter_data = filter_class(params=self.proxy(params), queryset=query).qs
         return filter_data
     
+    def test_blank_query(self):
+        session = Session()
+        query = session.query(Users.name)
+        params = ""
+        data = self.get_filter(self.user_filter_class, params, query).all()
+        assert len(data) == 10
+
     def test_single_equal(self):
         session = Session()
         query = session.query(Users.name)
@@ -76,7 +113,6 @@ class FilterTest(TestClient):
         session.close()
         
     def test_reverse_foreignkey_equal(self):
-
         session = Session()
         query = session.query(Users)
         params = "?address__name=Kolkata"
@@ -510,7 +546,6 @@ class LimitOffSetPaginationTest(TestClient):
         assert len(data["results"]) == 5
 
         data = await LimitOffSetPagination(params={"limit":5, "offset":5}, queryset=query).main()
-        print(data["pagination"])
         assert data["pagination"] == {'count': 10, 'total_pages': 2, 'next_offset': None, 'previous_offset': None}
         assert len(data["results"]) == 5
         session.close()
@@ -530,5 +565,6 @@ class LimitOffSetPaginationTest(TestClient):
 
 if __name__=="__main__":
     FilterTest().main()
-    # PageNoPaginationTest().main()
-    # LimitOffSetPaginationTest().main()
+    PageNoPaginationTest().main()
+    LimitOffSetPaginationTest().main()
+    ProxyRequestTest().main()
