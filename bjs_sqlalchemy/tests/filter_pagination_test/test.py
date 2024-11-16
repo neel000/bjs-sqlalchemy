@@ -1,10 +1,10 @@
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from proxy_request import ProxyRequest
+from bjs_sqlalchemy.proxy_request import ProxyRequest
 from models import Session, Users, Address, Contact, ContactDetail
-from filters import FilterSet
-from pagination import PageNoPagination, LimitOffSetPagination
+from bjs_sqlalchemy.filters import FilterSet
+from bjs_sqlalchemy.pagination import PageNoPagination, LimitOffSetPagination
 from sqlalchemy.orm import joinedload
 import asyncio
 import inspect

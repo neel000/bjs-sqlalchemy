@@ -11,7 +11,7 @@ class CommonMixin:
 class NameMixin:
     name = Column(String)
 
-engine = create_engine('sqlite:///./tests/database.db')
+engine = create_engine('sqlite:///./tests/filter_pagination_test/database.db')
 Base = declarative_base()
 
 Session = sessionmaker(bind=engine)
