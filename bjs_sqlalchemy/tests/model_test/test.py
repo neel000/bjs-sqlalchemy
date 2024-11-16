@@ -38,6 +38,12 @@ class Common:
         model = self.model if model is None else model
         return session.query(model).count()
 
+    def get_instance(self, model=None, id=1):
+        session = DatabaseConfig()
+        model = model if model else self.model
+        return session.query(model).filter(model.id==id).first()
+
+
 class TestCharFieldModelperation(TestClient, Common):
     model = TestCharFieldModel
     null_model = TestCharFieldNullCheck
@@ -105,6 +111,20 @@ class TestCharFieldModelperation(TestClient, Common):
         assert self.total_data(session=session, model=self.null_model) == 1
         await self.clear_data(model=self.null_model, session=session, id=data.id)
     
+    async def test_update_with_data(self):
+        session = DatabaseConfig()
+        obj = self.model(name="Testname")
+        _, data = await obj.save(session=session)
+
+        session = DatabaseConfig()
+        instance = session.query(self.model).filter(self.model.id == data.id).first()
+        instance.name = "UpdateTestName"
+
+        _status, update_data = await instance.save(session=session)
+        assert _status
+        assert update_data.name == "UpdateTestName"
+        await self.clear_data(session=session, model=self.model, id=data.id)
+
 class  TestTextFieldModelModelOperation(TestClient, Common):
     model = TestTextFieldModel
     null_model = TestTextFieldNullCheck
@@ -177,7 +197,22 @@ class  TestTextFieldModelModelOperation(TestClient, Common):
         session = DatabaseConfig()
         assert self.total_data(session=session, model=self.null_model) == 1
         await self.clear_data(model=self.null_model, session=session, id=data.id)
-        
+    
+    async def test_update_with_data(self):
+        session = DatabaseConfig()
+        obj = self.model(desc="Testname")
+        _, data = await obj.save(session=session)
+
+        session = DatabaseConfig()
+        instance = session.query(self.model).filter(self.model.id == data.id).first()
+        instance.desc = "UpdateTestName"
+
+        _status, update_data = await instance.save(session=session)
+        assert _status
+        assert update_data.desc == "UpdateTestName"
+        await self.clear_data(session=session, model=self.model, id=data.id)
+    
+
 class TestFileFieldModelOperation(TestClient, Common):
     model = TestFileFieldModel
     null_model = TestFileFieldNullCheck
@@ -224,11 +259,25 @@ class TestFileFieldModelOperation(TestClient, Common):
         file = self.load_file()
         obj = self.model(image=file)
         status, data = await obj.save(session=session)
+        prev_path = data.image
         assert status
-        assert os.path.exists(data.image)
+        assert os.path.exists(prev_path)
         assert self.total_data(session=session) == 1
+
+        status, update = await data.save(session=session)
+        assert status
+        assert update.image == data.image
+
+        instance = session.query(self.model).filter(self.model.id==data.id).first()
+
+        instance.image = self.load_file()
+        status, update_with_image = await instance.save(session=session)
+        assert status
+        assert update_with_image.image != prev_path
+        assert not os.path.exists(prev_path)
+        assert os.path.exists(update_with_image.image)
         await self.clear_data(model=self.model, session=session, id=data.id)
-    
+
     async def test_null_check_blank_data(self):
         session = DatabaseConfig()
         obj = self.null_model()
@@ -255,6 +304,19 @@ class TestFileFieldModelOperation(TestClient, Common):
         assert status
         assert os.path.exists(data.image)
         assert self.total_data(session=session, model=self.null_model) == 1
+
+        status, update = await data.save(session=session)
+        assert status
+        assert update.image == data.image
+
+        instance = session.query(self.null_model).filter(self.null_model.id==data.id).first()
+
+        instance.image = self.load_file()
+        status, update_with_image = await instance.save(session=session)
+        assert status
+        assert update_with_image.image != data.image
+        assert not os.path.exists(data.image)
+        assert os.path.exists(update_with_image.image)
         await self.clear_data(model=self.null_model, session=session, id=data.id)
 
 class TestIntFieldModelOprtation(TestClient, Common):
@@ -385,7 +447,7 @@ class TestModelCRUDOperation(TestClient, Common):
         assert os.path.exists(data.file_f)
         await self.clear_data(session=session, model=self.model, id=data.id)
 
-    async def test_create_all_valid_data(self):
+    async def test_create_update_all_valid_data(self):
         session = DatabaseConfig()
         payload = {
             'char_f': "String test", 
@@ -412,17 +474,33 @@ class TestModelCRUDOperation(TestClient, Common):
 
         assert os.path.exists(data.file_f)
         assert os.path.exists(data.file_f_null)
+
+        status, _ = await data.save(session=session)
+        assert status
+
+        instance = self.get_instance()
+        instance.char_f = "Update char f"
+        status, update = await instance.save(session=session)
+        assert status
+        assert update.char_f != data.char_f
+        assert update.char_f == instance.char_f
+
+        instance = self.get_instance()
+        instance.file_f = self.load_file()
+        status, update = await instance.save(session=session)
+        assert status
+        assert update.file_f != data.file_f
+        
+        assert os.path.exists(update.file_f)
+        assert not os.path.exists(data.file_f)
         await self.clear_data(session=session, model=self.model, id=data.id)
 
-    
 
 
-        
-
-
-TestCharFieldModelperation().main()
-TestTextFieldModelModelOperation().main()
-TestFileFieldModelOperation().main()
-TestIntFieldModelOprtation().main()
-TestModelCRUDOperation().main()
+if __name__ == '__main__':
+    # TestCharFieldModelperation().main()
+    # TestTextFieldModelModelOperation().main()
+    # TestFileFieldModelOperation().main()
+    # TestIntFieldModelOprtation().main()
+    TestModelCRUDOperation().main()
 

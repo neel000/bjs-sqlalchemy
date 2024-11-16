@@ -8,7 +8,7 @@ class TestClient:
 
     def main(self):
         test_cases = [fun for fun in self.__dir__() if fun.startswith("test_")]
-        # print(f"{self.__class__.__name__} Test Case")
+        print(f"{self.__class__.__name__} Test Case")
         x = 1
         for test in test_cases:
             attr = getattr(self, test)
@@ -17,7 +17,7 @@ class TestClient:
                 test = f"async {test}"
             else:
                 attr()
-            # print(f"PASS-TEST-{x}, {test}")
+            print(f"PASS-TEST-{x}, {test}")
             x+=1
         
     print("============================PASSS=====================================")

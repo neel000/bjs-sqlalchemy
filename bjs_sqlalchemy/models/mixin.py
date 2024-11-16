@@ -51,11 +51,9 @@ class FieldValidation(TableFieldCheck):
                 
                 attr = getattr(self.__table__.c, field)
                 file_data = getattr(self, field)
-                
-                if (attr.__class__ == File) and file_data:
-                    
+                x = get_history(self, field)
+                if (attr.__class__ == File) and file_data and x.added:
                     data[field] = await attr.upload(file=file_data)
-                    
                     if not data[field]:
                         error.append({field:"Error to upload file"})
                     else:
@@ -149,6 +147,7 @@ class UpdateMixin(FieldValidation, UpdateMethodRemoveFile, HandleRemoveFile):
             if refresh:
                 session.merge(self)
                 session.commit()
+            session.refresh(self)
             session.close()
             
             self._file_remove_handle(old_data)
