@@ -1,8 +1,6 @@
-import sys, os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, String, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
-from bjs_sqlalchemy.tests.filter_pagination_test.db_config import DATABASE_URL
+from .db_config import DATABASE_URL
 
 
 from bjs_sqlalchemy import models
@@ -14,7 +12,7 @@ class Base(models.Model):
 class NameMixin:
     name = Column(String)
 
-engine = create_engine(DATABASE_URL)
+
 
 class Users(Base, NameMixin):
     __tablename__ = 'users'
@@ -40,4 +38,5 @@ class ContactDetail(Base):
     contact_type = Column(String)
     contact = relationship(Contact, back_populates="contact_detail")
 
-# models.Base.metadata.create_all(engine)
+engine = models.create_engine(DATABASE_URL)
+models.Base.metadata.create_all(engine)

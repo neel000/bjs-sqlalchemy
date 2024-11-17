@@ -15,7 +15,7 @@ class PageNoPagination:
         )
         return limit, page
     
-    async def __pagination(self):
+    def __pagination(self):
         pagination = {}
         pagination["count"] = self.queryset.count()
         total_page = pagination["count"] // self.limit
@@ -38,10 +38,10 @@ class PageNoPagination:
         data = {"results":query, "pagination":pagination}
         return data
 
-    async def main(self):
+    def main(self):
         if not self.limit:
             return {"results":self.queryset.all()}
-        return await self.__pagination()
+        return self.__pagination()
 
 class LimitOffSetPagination:
     def __init__(self, params, queryset):
@@ -60,7 +60,7 @@ class LimitOffSetPagination:
         )
         return limit, offset
     
-    async def __pagination(self):
+    def __pagination(self):
         pagination = {}
         pagination["count"] = self.queryset.count()
         total_page = pagination["count"] // self.limit
@@ -83,8 +83,8 @@ class LimitOffSetPagination:
         query = self.queryset.limit(self.limit).offset(self.offset).all()
         return {"results":query, "pagination":pagination}
 
-    async def main(self):
+    def main(self):
         if not self.limit:
             return {"results":self.queryset.all()}
-        return await self.__pagination()
+        return self.__pagination()
 

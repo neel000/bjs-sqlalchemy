@@ -6,6 +6,7 @@ import os
 import re
 from datetime import datetime
 import random
+import asyncio
 
 
 class File(Column):
@@ -99,9 +100,9 @@ class File(Column):
 
         return file_location
     
-    async def upload(self, file):
+    def upload(self, file):
         if file.__class__.__name__== "UploadFile":
-            return await self.__file_upload(file)
+            return asyncio.run(self.__file_upload(file))
         return self.__base64_upload(file)
 
     def remove(self, value):

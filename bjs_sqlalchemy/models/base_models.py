@@ -10,10 +10,10 @@ class Model(Base, CreateMixin, UpdateMixin, DeleteMixin):
     __abstract__ = True
     id = Column(Integer, primary_key=True, index=True)
 
-    async def save(self, session, refresh=True):
-        return await self.create(
+    def save(self, session, refresh=True):
+        return self.create(
             session, refresh=refresh
-        ) if not self.id else await self.update(
+        ) if not self.id else self.update(
             session, refresh=refresh
         )
 

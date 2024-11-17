@@ -1,9 +1,7 @@
 from bjs_sqlalchemy import models
 from .db_config import DATABASE_URL
 
-
 engine = models.create_engine(DATABASE_URL)
-
 class TestCharFieldModel(models.Model):
     __tablename__ = "TestCharFieldModel"
     name = models.CharField(max_length=120)
@@ -22,11 +20,11 @@ class TestTextFieldNullCheck(models.Model):
 
 class TestFileFieldModel(models.Model):
     __tablename__ = "TestFileFieldModel"
-    image = models.FileField(upload_to="tests/model_test/media")
+    image = models.FileField(upload_to="media/")
 
 class TestFileFieldNullCheck(models.Model):
     __tablename__ = "TestFileFieldNullCheck"
-    image = models.FileField(upload_to="tests/model_test/media", nullable=True)
+    image = models.FileField(upload_to="media/", nullable=True)
 
 class TestIntFieldModel(models.Model):
     __tablename__ = "TestIntFieldModel"
@@ -45,10 +43,12 @@ class TestModelCRUD(models.Model):
     bool_f = models.BooleanField(default=False)
     bool_f_null = models.BooleanField(nullable=True)
 
-    file_f = models.FileField(upload_to="tests/model_test/media")
-    file_f_null = models.FileField(upload_to="tests/model_test/media/null", nullable=True)
+    file_f = models.FileField(upload_to="media/")
+    file_f_null = models.FileField(upload_to="media/null", nullable=True)
 
     text_f = models.TextField()
     text_f_null = models.TextField(nullable=True)
+
+
 
 models.Base.metadata.create_all(engine)

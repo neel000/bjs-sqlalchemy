@@ -41,7 +41,7 @@ class FieldValidation(TableFieldCheck):
         return data
     
     @property
-    async def _file_upload_handle(self):
+    def _file_upload_handle(self):
         data = {}
         all_fields = self.__dir__()
         error = []
@@ -53,7 +53,7 @@ class FieldValidation(TableFieldCheck):
                 file_data = getattr(self, field)
                 x = get_history(self, field)
                 if (attr.__class__ == File) and file_data and x.added:
-                    data[field] = await attr.upload(file=file_data)
+                    data[field] = attr.upload(file=file_data)
                     if not data[field]:
                         error.append({field:"Error to upload file"})
                     else:
@@ -94,10 +94,11 @@ class DeleteMethodRemoveFile(TableFieldCheck, HandleRemoveFile):
 # MODELS CRUD MIXIN #
 class CreateMixin(FieldValidation, HandleRemoveFile):
 
-    async def create(self, session, refresh=True):
+    def create(self, session, refresh=True):
         error = self._validate
         if error:return False, error
-        error, data = await self._file_upload_handle
+        error, data = self._file_upload_handle
+
         if error:
             self._file_remove_handle(data)
             return False, error
@@ -114,7 +115,7 @@ class CreateMixin(FieldValidation, HandleRemoveFile):
             self._file_remove_handle(data)
             return False, [str(e)]
         
-    async def bulk_create(self, session, data:list=[]):
+    def bulk_create(self, session, data:list=[]):
         if not data:
             return False, ["Data is not found!"]
         try:
@@ -128,7 +129,7 @@ class CreateMixin(FieldValidation, HandleRemoveFile):
         return True, result.lastrowid
 
 class UpdateMixin(FieldValidation, UpdateMethodRemoveFile, HandleRemoveFile):
-    async def update(self, session, refresh=True):
+    def update(self, session, refresh=True):
         try:
             
             error = self._validate
@@ -137,7 +138,7 @@ class UpdateMixin(FieldValidation, UpdateMethodRemoveFile, HandleRemoveFile):
                 session.close()
                 return False, error
             
-            error, data = await self._file_upload_handle
+            error, data = self._file_upload_handle
 
             if error:
                 self._file_remove_handle(data)
@@ -158,7 +159,7 @@ class UpdateMixin(FieldValidation, UpdateMethodRemoveFile, HandleRemoveFile):
             session.rollback()
             return False, [str(e)]
 
-    async def bulk_update(self, session, data:list=[]):
+    def bulk_update(self, session, data:list=[]):
         if not data:
             return False, ["Data is not found!"]
         
@@ -171,7 +172,7 @@ class UpdateMixin(FieldValidation, UpdateMethodRemoveFile, HandleRemoveFile):
             return False, str(e)
         
 class DeleteMixin(DeleteMethodRemoveFile):
-    async def delete(self, session):
+    def delete(self, session):
         try:
             self._delete_method_remove_file_get()
             session.delete(self)

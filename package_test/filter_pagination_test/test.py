@@ -2,13 +2,13 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from bjs_sqlalchemy.proxy_request import ProxyRequest
-from bjs_sqlalchemy.tests.filter_pagination_test.models import(
+from .models import(
     Users, Address, Contact, ContactDetail
 ) 
-from bjs_sqlalchemy.tests.filter_pagination_test.db_config import Session
+from .db_config import Session
 from bjs_sqlalchemy.filters import FilterSet
 from bjs_sqlalchemy.pagination import PageNoPagination, LimitOffSetPagination
-from bjs_sqlalchemy.tests.client import TestClient
+import unittest
 from sqlalchemy.orm import joinedload
 
 
@@ -39,6 +39,9 @@ class ContactDetailFilter(FilterSet):
         fields = {
             "contact__user__name"
         }
+
+class TestClient(unittest.TestCase):
+    pass
 
 class ProxyRequestTest(TestClient):
     
@@ -453,17 +456,17 @@ class FilterTest(TestClient):
         assert (len(filter_data)==0)
 
 class PageNoPaginationTest(TestClient):
-    async def test_without_passing_limit(self):
+    def test_without_passing_limit(self):
         session = Session()
         query = session.query(Users)
-        data = await PageNoPagination(params={}, queryset=query).main()
+        data = PageNoPagination(params={}, queryset=query).main()
         assert len(data["results"]) == query.count()
         session.close()
     
-    async def test_with_passing_limit(self):
+    def test_with_passing_limit(self):
         session = Session()
         query = session.query(Users)
-        data = await PageNoPagination(params={"limit":1}, queryset=query).main()
+        data = PageNoPagination(params={"limit":1}, queryset=query).main()
         total = query.count()
         pagination = {
             'count': total, 'total_pages': total//1, 
@@ -475,11 +478,11 @@ class PageNoPaginationTest(TestClient):
         assert len(data["results"]) == 1
         session.close()
 
-    async def test_with_passing_limit_page(self):
+    def test_with_passing_limit_page(self):
         session = Session()
         query = session.query(Users)
         params = {"limit":2, "page":3}
-        data = await PageNoPagination(params=params, queryset=query).main()
+        data = PageNoPagination(params=params, queryset=query).main()
         total = query.count()
         pagination = {
             'count': total, 
@@ -492,10 +495,10 @@ class PageNoPaginationTest(TestClient):
         assert len(data["results"]) == params["limit"]
         session.close()
 
-    async def test_with_passing_limit_invalid_page(self):
+    def test_with_passing_limit_invalid_page(self):
         session = Session()
         query = session.query(Users)
-        data = await PageNoPagination(params={"limit":2, "page":20}, queryset=query).main()
+        data = PageNoPagination(params={"limit":2, "page":20}, queryset=query).main()
         total = query.count()
         pagination = {
             'count': total, 
@@ -545,45 +548,45 @@ class LimitOffSetPaginationTest(TestClient):
         assert data.limit == int(params["limit"])
         assert data.offset == int(params["limit"])
 
-    async def test_main_function_withoutpassing_limit_or_invalid_limit(self):
+    def test_main_function_withoutpassing_limit_or_invalid_limit(self):
         session = Session()
         query = session.query(Users)
         count = query.count()
-        data = await LimitOffSetPagination(params={}, queryset=query).main()
+        data = LimitOffSetPagination(params={}, queryset=query).main()
         assert len(data["results"]) == count
 
-        data = await LimitOffSetPagination(params={"limit":"opop"}, queryset=query).main()
+        data = LimitOffSetPagination(params={"limit":"opop"}, queryset=query).main()
         assert len(data["results"]) == count
 
-        data = await LimitOffSetPagination(params={"limit":"10.5"}, queryset=query).main()
+        data = LimitOffSetPagination(params={"limit":"10.5"}, queryset=query).main()
         assert len(data["results"]) == count
 
-        data = await LimitOffSetPagination(params={"limit":""}, queryset=query).main()
+        data = LimitOffSetPagination(params={"limit":""}, queryset=query).main()
         assert len(data["results"]) == count
         session.close()
     
-    async def test_main_function_with_passing_valid_limit_offset(self):
+    def test_main_function_with_passing_valid_limit_offset(self):
         session = Session()
         query = session.query(Users)
 
-        data = await LimitOffSetPagination(params={"limit":5}, queryset=query).main()
+        data = LimitOffSetPagination(params={"limit":5}, queryset=query).main()
         assert data["pagination"] == {'count': 10, 'total_pages': 2, 'next_offset': 5, 'previous_offset': None}
         assert len(data["results"]) == 5
 
-        data = await LimitOffSetPagination(params={"limit":5, "offset":5}, queryset=query).main()
+        data = LimitOffSetPagination(params={"limit":5, "offset":5}, queryset=query).main()
         assert data["pagination"] == {'count': 10, 'total_pages': 2, 'next_offset': None, 'previous_offset': None}
         assert len(data["results"]) == 5
         session.close()
     
-    async def test_main_function_with_passing_invalid_limit_offset(self):
+    def test_main_function_with_passing_invalid_limit_offset(self):
         session = Session()
         query = session.query(Users)
         
-        data = await LimitOffSetPagination(params={"limit":10, "offset":100}, queryset=query).main()
+        data = LimitOffSetPagination(params={"limit":10, "offset":100}, queryset=query).main()
         assert data["pagination"] == {'count': 10, 'total_pages': 1, 'next_offset': None, 'previous_offset': query.count()}
         assert len(data["results"]) == 0
 
-        data = await LimitOffSetPagination(params={"limit":1, "offset":100}, queryset=query).main()
+        data = LimitOffSetPagination(params={"limit":1, "offset":100}, queryset=query).main()
         assert data["pagination"] == {'count': 10, 'total_pages': 10, 'next_offset': None, 'previous_offset': 10}
         assert len(data["results"]) == 0
         session.close()
