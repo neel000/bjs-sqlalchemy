@@ -1,0 +1,7 @@
+# Include the templates directory and all its contents
+include bjs_sqlalchemy/models/*
+include bjs_sqlalchemy/serializer/*
+
+# If you want to include subdirectories and their contents, use the recursive syntax:
+recursive-include bjs_sqlalchemy/models *
+recursive-include bjs_sqlalchemy/serializer *
