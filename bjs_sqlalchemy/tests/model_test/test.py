@@ -7,6 +7,10 @@ from bjs_sqlalchemy.tests.model_test.models import (
 from bjs_sqlalchemy import models
 from bjs_sqlalchemy.tests.model_test.db_config import DatabaseConfig
 from bjs_sqlalchemy.tests.client import TestClient
+from bjs_sqlalchemy.tests.model_test.filters import(
+    TestCharFilter
+)
+from bjs_sqlalchemy.proxy_request import ProxyRequest
 import base64
 import os
 
@@ -36,17 +40,20 @@ class Common:
 
     def total_data(self, session, model=None):
         model = self.model if model is None else model
+        # print(session.query(model).first().name)
         return session.query(model).count()
 
     def get_instance(self, model=None, id=1):
         session = DatabaseConfig()
         model = model if model else self.model
         return session.query(model).filter(model.id==id).first()
-
+    
+    
 
 class TestCharFieldModelperation(TestClient, Common):
     model = TestCharFieldModel
     null_model = TestCharFieldNullCheck
+    filter_class = TestCharFilter
 
     def test_list_test_model(self):
         session = DatabaseConfig()
@@ -124,6 +131,15 @@ class TestCharFieldModelperation(TestClient, Common):
         assert _status
         assert update_data.name == "UpdateTestName"
         await self.clear_data(session=session, model=self.model, id=data.id)
+    
+    def test_filter_with_no_data_no_params(self):
+        session = DatabaseConfig()
+        query = session.query(self.model)
+        params = ProxyRequest('')
+        filter_data = self.filter_class(params=params, queryset=query).qs
+        assert len(filter_data.all()) == 0
+        session.close()
+
 
 class  TestTextFieldModelModelOperation(TestClient, Common):
     model = TestTextFieldModel
@@ -212,7 +228,6 @@ class  TestTextFieldModelModelOperation(TestClient, Common):
         assert update_data.desc == "UpdateTestName"
         await self.clear_data(session=session, model=self.model, id=data.id)
     
-
 class TestFileFieldModelOperation(TestClient, Common):
     model = TestFileFieldModel
     null_model = TestFileFieldNullCheck
@@ -318,7 +333,6 @@ class TestFileFieldModelOperation(TestClient, Common):
         assert not os.path.exists(data.image)
         assert os.path.exists(update_with_image.image)
         await self.clear_data(model=self.null_model, session=session, id=data.id)
-
 class TestIntFieldModelOprtation(TestClient, Common):
     model = TestIntFieldModel
 
@@ -495,12 +509,18 @@ class TestModelCRUDOperation(TestClient, Common):
         assert not os.path.exists(data.file_f)
         await self.clear_data(session=session, model=self.model, id=data.id)
 
+# class TestModelFilterPagination(TestClient, Common):
+#     model = TestCharFieldModel
+#     proxy_request = ProxyRequest
+#     filter_class = TestCharFilter
+
 
 
 if __name__ == '__main__':
-    # TestCharFieldModelperation().main()
+    TestCharFieldModelperation().main()
     # TestTextFieldModelModelOperation().main()
     # TestFileFieldModelOperation().main()
     # TestIntFieldModelOprtation().main()
-    TestModelCRUDOperation().main()
+    # TestModelCRUDOperation().main()
+    # TestModelFilterPagination().main()
 

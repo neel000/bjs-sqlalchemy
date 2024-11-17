@@ -7,4 +7,13 @@ env/
 */__pycache__/
 */*/__pycache__/
 */*/*/__pycache__/
+*/*/*/*/__pycache__/
+*/*/*/*/__pycache__/
+*/*/*/*/*/__pycache__/
+*/*/*/*/*/*/__pycache__/
 bjs_sqlalchemy/tests/*/database.db
+package_test/*/database.db
+package_test/env
+package_test/env/
+package_test/dist
+package_test/dist/

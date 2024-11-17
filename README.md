@@ -84,3 +84,8 @@ Instructions on how to install your package.
 ```bash
 pip install bjs-sqlalchemy
 ```
+
+# Build
+```bash
+python setup.py sdist bdist_wheel
+```

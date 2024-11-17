@@ -1,10 +1,8 @@
 from bjs_sqlalchemy import models
 from bjs_sqlalchemy.tests.model_test.db_config import DATABASE_URL
 
-DATABASE_URL = "sqlite:///./tests/model_test/database.db"
 
 engine = models.create_engine(DATABASE_URL)
-# Base = models.declarative_base()
 
 class TestCharFieldModel(models.Model):
     __tablename__ = "TestCharFieldModel"
@@ -52,7 +50,5 @@ class TestModelCRUD(models.Model):
 
     text_f = models.TextField()
     text_f_null = models.TextField(nullable=True)
-
-
 
 models.Base.metadata.create_all(engine)

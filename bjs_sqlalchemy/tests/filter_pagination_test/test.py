@@ -2,12 +2,15 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from bjs_sqlalchemy.proxy_request import ProxyRequest
-from models import Session, Users, Address, Contact, ContactDetail
+from bjs_sqlalchemy.tests.filter_pagination_test.models import(
+    Users, Address, Contact, ContactDetail
+) 
+from bjs_sqlalchemy.tests.filter_pagination_test.db_config import Session
 from bjs_sqlalchemy.filters import FilterSet
 from bjs_sqlalchemy.pagination import PageNoPagination, LimitOffSetPagination
+from bjs_sqlalchemy.tests.client import TestClient
 from sqlalchemy.orm import joinedload
-import asyncio
-import inspect
+
 
 class UserFilter(FilterSet):
     class Meta:
@@ -36,25 +39,6 @@ class ContactDetailFilter(FilterSet):
         fields = {
             "contact__user__name"
         }
-
-class TestClient:
-    @staticmethod
-    def is_async_function(func):
-        return inspect.iscoroutinefunction(func)
-
-    def main(self):
-        test_cases = [fun for fun in self.__dir__() if fun.startswith("test_")]
-        print(f"{self.__class__.__name__} Test Case")
-        x = 1
-        for test in test_cases:
-            attr = getattr(self, test)
-            if self.is_async_function(attr):
-                asyncio.run(attr())
-                test = f"async {test}"
-            else:
-                attr()
-            print(f"PASS-TEST-{x}, {test}")
-            x+=1
 
 class ProxyRequestTest(TestClient):
     

@@ -2,7 +2,8 @@
 ```bash
     export PYTHONPATH=$(pwd)
     cd bjs_sqlalchemy/ 
-    python tests/main.py
+    python tests/filter_pagination_test/test.py
+    python tests/model_test/test.py
 ```
 
 # Filter Testcase run

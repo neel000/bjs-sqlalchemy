@@ -1,10 +1,5 @@
-from bjs_sqlalchemy.tests.model_test.test import (
-    TestCharFieldModelperation, TestTextFieldModelModelOperation,
-    TestFileFieldModelOperation, TestIntFieldModelOprtation, TestModelCRUDOperation
-)
+import os
+command = os.system
 
-TestCharFieldModelperation().main()
-TestTextFieldModelModelOperation().main()
-TestFileFieldModelOperation().main()
-TestIntFieldModelOprtation().main()
-TestModelCRUDOperation().main()
+command("python tests/filter_pagination_test/test.py")
+command("python tests/model_test/test.py")
