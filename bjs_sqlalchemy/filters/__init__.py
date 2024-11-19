@@ -138,6 +138,5 @@ class FilterSet(GetField):
     def qs(self):
         filter_data = self.__filter()
         query = self._queryset.filter(*filter_data)
-        
         return query
 

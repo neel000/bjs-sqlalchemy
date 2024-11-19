@@ -17,3 +17,6 @@ package_test/env
 package_test/env/
 package_test/dist
 package_test/dist/
+build/
+dist/
+bjs_sqlalchemy.egg-info/

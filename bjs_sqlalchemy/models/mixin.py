@@ -3,12 +3,14 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from sqlalchemy.orm.collections import InstrumentedList
 from .fields import File
 from sqlalchemy.orm.attributes import get_history
+import asyncio
 
 class TableFieldCheck:
     __common_fields = [
         'registry', 'metadata', 'create',
         "bulk_create", "update", "bulk_update",
-        "delete", "bulk_delete", "save"
+        "delete", "bulk_delete", "save", "async_save",
+        "async_delete"
     ]
 
     def _is_table_field(self, field):
@@ -19,7 +21,7 @@ class HandleRemoveFile:
         for key, value in data.items():
             attr = getattr(self.__table__.c, key)
             attr.remove(value)
-
+        
 class FieldValidation(TableFieldCheck):
     
     @property
@@ -61,6 +63,19 @@ class FieldValidation(TableFieldCheck):
 
         return error, data
 
+    @property
+    def _validate_data(self):
+        
+        error = self._validate
+        if error:return False, error
+        error, data = self._file_upload_handle
+
+        if error:
+            self._file_remove_handle(data)
+            return False, error
+        
+        return True, data
+
 class UpdateMethodRemoveFile:
     def _update_method_remove_file_get(self):
         all_fields = self.__dir__()
@@ -95,18 +110,13 @@ class DeleteMethodRemoveFile(TableFieldCheck, HandleRemoveFile):
 class CreateMixin(FieldValidation, HandleRemoveFile):
 
     def create(self, session, refresh=True):
-        error = self._validate
-        if error:return False, error
-        error, data = self._file_upload_handle
-
-        if error:
-            self._file_remove_handle(data)
-            return False, error
+        status, data = self._validate_data
+        if not status:
+            return self._validate_data
         
         try:
             session.add(self)
             session.commit()
-
             if refresh:
                 session.refresh(self)
             return True, self
@@ -128,21 +138,35 @@ class CreateMixin(FieldValidation, HandleRemoveFile):
         session.close()
         return True, result.lastrowid
 
+    async def _async_create(self, session, refresh=True):
+        status, data = self._validate_data
+        if not status:
+            await session.close()
+            return status, data
+
+        status, output_data = False, self
+
+        try:
+            session.add(self)
+            await session.commit()
+            if refresh:
+                await session.refresh(self)
+            status, output_data =  True, self
+        except (SQLAlchemyError, IntegrityError, Exception) as e:
+            session.rollback()
+            self._file_remove_handle(data)
+            status, output_data =  False, [str(e)]
+        
+        await session.close()
+        return status, output_data
+        
 class UpdateMixin(FieldValidation, UpdateMethodRemoveFile, HandleRemoveFile):
     def update(self, session, refresh=True):
         try:
             
-            error = self._validate
-
-            if error:
-                session.close()
-                return False, error
-            
-            error, data = self._file_upload_handle
-
-            if error:
-                self._file_remove_handle(data)
-                return False, error
+            status, data = self._validate_data
+            if not status:
+                return self._validate_data
             
             old_data = self._update_method_remove_file_get()
             if refresh:
@@ -150,7 +174,6 @@ class UpdateMixin(FieldValidation, UpdateMethodRemoveFile, HandleRemoveFile):
                 session.commit()
             session.refresh(self)
             session.close()
-            
             self._file_remove_handle(old_data)
             return True, self
         
@@ -170,7 +193,33 @@ class UpdateMixin(FieldValidation, UpdateMethodRemoveFile, HandleRemoveFile):
         except (SQLAlchemyError, IntegrityError, Exception) as e:
             session.rollback()
             return False, str(e)
+    
+    async def _async_update(self, session, refresh=True):
+        status, data = self._validate_data
+        if not status:
+            await session.close()
+            return self._validate_data
+            
+        old_data = self._update_method_remove_file_get()
+        status, output_data = False, self
         
+        try:
+            await session.merge(self)
+            await session.commit()
+            if refresh:
+                await session.refresh(self)
+            self._file_remove_handle(old_data)
+            status, output_data =  True, self
+        except (SQLAlchemyError, IntegrityError, Exception) as e:
+            self._file_remove_handle(data)
+            await session.rollback()
+            status, output_data  = False, [str(e)]
+        
+        await session.close()
+        return status, output_data
+        
+       
+
 class DeleteMixin(DeleteMethodRemoveFile):
     def delete(self, session):
         try:
@@ -178,6 +227,19 @@ class DeleteMixin(DeleteMethodRemoveFile):
             session.delete(self)
             session.commit()
             session.close()
+            return True, None
+        
+        except (SQLAlchemyError, IntegrityError, Exception) as e:
+            session.rollback()
+            session.close()
+            return False, str(e)
+    
+    async def async_delete(self, session):
+        try:
+            self._delete_method_remove_file_get()
+            await session.delete(self)
+            await session.commit()
+            await session.close()
             return True, None
         
         except (SQLAlchemyError, IntegrityError, Exception) as e:

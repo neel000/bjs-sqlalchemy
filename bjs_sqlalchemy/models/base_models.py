@@ -17,3 +17,10 @@ class Model(Base, CreateMixin, UpdateMixin, DeleteMixin):
             session, refresh=refresh
         )
 
+    async def async_save(self, session, refresh=True):
+        return await self._async_create(
+            session, refresh=refresh
+        ) if not self.id else await self._async_update(
+            session, refresh=refresh
+        )
+

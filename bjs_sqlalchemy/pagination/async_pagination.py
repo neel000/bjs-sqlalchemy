@@ -1,18 +1,20 @@
+
 from bjs_sqlalchemy.pagination.mixin import (
-    
+    AsyncPaginationMixin as PaginationMixin, 
     LimitPageMixin, LimitOffsetMixin
 )
 
-class PageNoPagination(LimitPageMixin):
-    def __init__(self, params, queryset):
+class PageNoPagination(PaginationMixin, LimitPageMixin):
+    def __init__(self, params, queryset, session):
         self.queryset = queryset
         limit = params.get("limit", None)
         page = params.get("page", None)
         self.limit ,self.page_no = self._valid_limit_page(limit, page)
+        self.session = session
     
-    def __pagination(self):
+    async def _pagination(self):
         pagination = {}
-        pagination["count"] = self.queryset.count()
+        pagination["count"] = await self.count()
         total_page = pagination["count"] // self.limit
         reminder = pagination["count"] % self.limit
         pagination["total_pages"] = total_page
@@ -29,25 +31,23 @@ class PageNoPagination(LimitPageMixin):
         pagination["previous_page"] = self.page_no -1 if self.page_no > 1 else None
         
         offset = (self.page_no -1) *self.limit
-        query = self.queryset.limit(self.limit).offset(offset).all()
+        
+        query = await self.get_all_data(limit=self.limit, offset=offset)
         data = {"results":query, "pagination":pagination}
         return data
 
-    def main(self):
-        if not self.limit:
-            return {"results":self.queryset.all()}
-        return self.__pagination()
+class LimitOffSetPagination(PaginationMixin, LimitOffsetMixin):
 
-class LimitOffSetPagination(LimitOffsetMixin):
-    def __init__(self, params, queryset):
+    def __init__(self, params, queryset, session):
         self.queryset = queryset
         limit = params.get("limit", None)
         offset = params.get("offset", None)
         self.limit ,self.offset = self._valid_limit_offset(limit, offset)
+        self.session = session
     
-    def __pagination(self):
+    async def _pagination(self):
         pagination = {}
-        pagination["count"] = self.queryset.count()
+        pagination["count"] = await self.count()
         total_page = pagination["count"] // self.limit
         reminder = pagination["count"] % self.limit
         pagination["total_pages"] = total_page
@@ -65,11 +65,6 @@ class LimitOffSetPagination(LimitOffsetMixin):
         previous_offset = self.offset-self.limit if self.offset > 0 else 0
         pagination["previous_offset"] = previous_offset if previous_offset>0 else None
 
-        query = self.queryset.limit(self.limit).offset(self.offset).all()
+        query = await self.get_all_data(limit=self.limit, offset=self.offset)
         return {"results":query, "pagination":pagination}
-
-    def main(self):
-        if not self.limit:
-            return {"results":self.queryset.all()}
-        return self.__pagination()
 

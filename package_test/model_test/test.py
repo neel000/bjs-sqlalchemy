@@ -6,7 +6,7 @@ from .models import (
     TestIntFieldModel, TestModelCRUD
 )
 
-from .db_config import DatabaseConfig, DATABASE_URL
+from .db_config import DatabaseConfig
 import unittest
 
 from bjs_sqlalchemy.proxy_request import ProxyRequest
