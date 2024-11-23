@@ -57,7 +57,9 @@ class IntregrationTesting(TestClient):
 
         # UpdateData
         data.name = "Update Test Name"
-        status, update_data = data.save(session=session)
+        status, update_data = data.save(session=session,refresh=True)
+
+        print(status, update_data.name)
         
         self.assertEqual(status, True)
         self.assertNotEqual(update_data.name, "Test Name")
@@ -112,7 +114,7 @@ class TestCharFieldModelperation(TestClient, Common):
     def test_blank_data_create(self):
         session = DatabaseConfig()
         obj = self.model()
-        status, data = obj.save(session=session)
+        status, data = obj.save(session=session, refresh=True)
         except_output = [{'name': 'This value is not be empty'}]
         assert not status
         assert self.sort(data) == except_output
@@ -169,13 +171,13 @@ class TestCharFieldModelperation(TestClient, Common):
     def test_update_with_data(self):
         session = DatabaseConfig()
         obj = self.model(name="Testname")
-        _, data = obj.save(session=session)
+        _, data = obj.save(session=session, refresh=True)
 
         session = DatabaseConfig()
         instance = session.query(self.model).filter(self.model.id == data.id).first()
         instance.name = "UpdateTestName"
 
-        _status, update_data = instance.save(session=session)
+        _status, update_data = instance.save(session=session, refresh=True)
         assert _status
         assert update_data.name == "UpdateTestName"
         self.clear_data(session=session, model=self.model, id=data.id)

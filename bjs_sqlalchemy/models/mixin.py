@@ -3,7 +3,6 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from sqlalchemy.orm.collections import InstrumentedList
 from .fields import File
 from sqlalchemy.orm.attributes import get_history
-import asyncio
 
 class TableFieldCheck:
     __common_fields = [
@@ -14,31 +13,45 @@ class TableFieldCheck:
     ]
 
     def _is_table_field(self, field):
-        return not field.startswith("_") and field not in self.__common_fields and getattr(self, field).__class__ != InstrumentedList
+
+        table_field = (
+            not field.startswith("_") 
+            and field not in self.__common_fields 
+        )
+        
+        if not table_field:return False
+        
+
+        try:
+            attr = getattr(self.__table__.c, field)
+            return attr
+        except:
+            return False
+ 
 
 class HandleRemoveFile:
     def _file_remove_handle(self, data):
         for key, value in data.items():
             attr = getattr(self.__table__.c, key)
             attr.remove(value)
-        
+
 class FieldValidation(TableFieldCheck):
-    
     @property
     def _validate(self):
         data = []
         all_fields = self.__dir__()
-        
+
         for field in all_fields:
-            if self._is_table_field(field):
-                attr = getattr(self.__table__.c, field)
-                if (
-                    not getattr(attr, "primary_key") and 
-                    not getattr(attr, "default") and 
-                    not getattr(attr, "nullable") and  
-                    not getattr(self, attr.key)
-                ):
-                    data.append({attr.key:"This value is not be empty"})
+            attr = self._is_table_field(field)
+            
+            if (
+                not attr == False and
+                not getattr(attr, "primary_key") and 
+                not getattr(attr, "default") and 
+                not getattr(attr, "nullable") and  
+                not getattr(self, attr.key)
+            ):
+                data.append({attr.key:"This value is not be empty"})
                 
         return data
     
@@ -49,11 +62,18 @@ class FieldValidation(TableFieldCheck):
         error = []
        
         for field in all_fields:
-            if self._is_table_field(field):
-                
-                attr = getattr(self.__table__.c, field)
+            attr = self._is_table_field(field)
+
+            if not attr == False:
                 file_data = getattr(self, field)
+                if file_data.__class__.__name__== "UploadFile":
+                    error.append(
+                        {field:"File field is failed to upload, use async_save method "}
+                    )
+                    return error, data
+                
                 x = get_history(self, field)
+                
                 if (attr.__class__ == File) and file_data and x.added:
                     data[field] = attr.upload(file=file_data)
                     if not data[field]:
@@ -61,6 +81,27 @@ class FieldValidation(TableFieldCheck):
                     else:
                         setattr(self, field, data[field])
 
+        return error, data
+
+    @property
+    async def _async_file_upload_handle(self):
+        data = {}
+        all_fields = self.__dir__()
+        error = []
+
+        for field in all_fields:
+            attr = self._is_table_field(field)
+            if not attr == False:
+                file_data = getattr(self, field)
+                
+                x = get_history(self, field)
+                
+                if (attr.__class__ == File) and file_data and x.added:
+                    data[field] = await attr.async_upload(file=file_data)
+                    if not data[field]:
+                        error.append({field:"Error to upload file"})
+                    else:
+                        setattr(self, field, data[field])
         return error, data
 
     @property
@@ -76,20 +117,32 @@ class FieldValidation(TableFieldCheck):
         
         return True, data
 
+    @property
+    async def _async_validate_data(self):
+        error = self._validate
+        if error:return False, error
+        error, data = await self._async_file_upload_handle
+
+        if error:
+            self._file_remove_handle(data)
+            return False, error
+        
+        return True, data
+
 class UpdateMethodRemoveFile:
     def _update_method_remove_file_get(self):
         all_fields = self.__dir__()
         data = {}
         for field in all_fields:
-            if self._is_table_field(field):
-                attr = getattr(self.__table__.c, field)
+            attr = self._is_table_field(field)
+            if not attr == False:
                 file_data = getattr(self, field)
 
                 if (attr.__class__ == File) and file_data:
                     x = get_history(self, field)
                     if x.deleted:
                         data[field] = x.deleted[0]
-        
+
         return data
 
 class DeleteMethodRemoveFile(TableFieldCheck, HandleRemoveFile):
@@ -97,12 +150,11 @@ class DeleteMethodRemoveFile(TableFieldCheck, HandleRemoveFile):
         data = {}
         all_fields = self.__dir__()
         for field in all_fields:
-            if self._is_table_field(field):
-                attr = getattr(self.__table__.c, field)
-                if (attr.__class__ == File):
-                    file_data = getattr(self, field)
-                    data[field] = file_data
-                    
+            attr = self._is_table_field(field)
+            if not attr is False and attr.__class__ == File:
+                file_data = getattr(self, field)
+                data[field] = file_data
+
         return self._file_remove_handle(data)
 
 
@@ -112,7 +164,7 @@ class CreateMixin(FieldValidation, HandleRemoveFile):
     def create(self, session, refresh=True):
         status, data = self._validate_data
         if not status:
-            return self._validate_data
+            return status, data
         
         try:
             session.add(self)
@@ -139,11 +191,11 @@ class CreateMixin(FieldValidation, HandleRemoveFile):
         return True, result.lastrowid
 
     async def _async_create(self, session, refresh=True):
-        status, data = self._validate_data
+        status, data = await self._async_validate_data
         if not status:
             await session.close()
             return status, data
-
+        
         status, output_data = False, self
 
         try:
@@ -153,7 +205,7 @@ class CreateMixin(FieldValidation, HandleRemoveFile):
                 await session.refresh(self)
             status, output_data =  True, self
         except (SQLAlchemyError, IntegrityError, Exception) as e:
-            session.rollback()
+            await session.rollback()
             self._file_remove_handle(data)
             status, output_data =  False, [str(e)]
         
@@ -161,18 +213,20 @@ class CreateMixin(FieldValidation, HandleRemoveFile):
         return status, output_data
         
 class UpdateMixin(FieldValidation, UpdateMethodRemoveFile, HandleRemoveFile):
-    def update(self, session, refresh=True):
+    def update(self, session, refresh):
+        status, data = self._validate_data
+        
+        if not status:
+            return status, data
+        
+        old_data = self._update_method_remove_file_get()
+    
         try:
+            session.merge(self)
+            session.commit()
+
+            if refresh:session.refresh(self)
             
-            status, data = self._validate_data
-            if not status:
-                return self._validate_data
-            
-            old_data = self._update_method_remove_file_get()
-            if refresh:
-                session.merge(self)
-                session.commit()
-            session.refresh(self)
             session.close()
             self._file_remove_handle(old_data)
             return True, self
@@ -195,10 +249,10 @@ class UpdateMixin(FieldValidation, UpdateMethodRemoveFile, HandleRemoveFile):
             return False, str(e)
     
     async def _async_update(self, session, refresh=True):
-        status, data = self._validate_data
+        status, data = await self._async_validate_data
         if not status:
             await session.close()
-            return self._validate_data
+            return status, data
             
         old_data = self._update_method_remove_file_get()
         status, output_data = False, self
@@ -206,8 +260,10 @@ class UpdateMixin(FieldValidation, UpdateMethodRemoveFile, HandleRemoveFile):
         try:
             await session.merge(self)
             await session.commit()
+
             if refresh:
                 await session.refresh(self)
+
             self._file_remove_handle(old_data)
             status, output_data =  True, self
         except (SQLAlchemyError, IntegrityError, Exception) as e:
@@ -217,13 +273,11 @@ class UpdateMixin(FieldValidation, UpdateMethodRemoveFile, HandleRemoveFile):
         
         await session.close()
         return status, output_data
-        
-       
 
 class DeleteMixin(DeleteMethodRemoveFile):
     def delete(self, session):
+        self._delete_method_remove_file_get()
         try:
-            self._delete_method_remove_file_get()
             session.delete(self)
             session.commit()
             session.close()
@@ -233,6 +287,7 @@ class DeleteMixin(DeleteMethodRemoveFile):
             session.rollback()
             session.close()
             return False, str(e)
+        
     
     async def async_delete(self, session):
         try:
@@ -243,8 +298,8 @@ class DeleteMixin(DeleteMethodRemoveFile):
             return True, None
         
         except (SQLAlchemyError, IntegrityError, Exception) as e:
-            session.rollback()
-            session.close()
+            await session.rollback()
+            await session.close()
             return False, str(e)
         
     async def bulk_delete(self, session, data:list=[]):

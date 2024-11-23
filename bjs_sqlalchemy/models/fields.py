@@ -101,10 +101,13 @@ class File(Column):
         return file_location
     
     def upload(self, file):
-        if file.__class__.__name__== "UploadFile":
-            return asyncio.run(self.__file_upload(file))
         return self.__base64_upload(file)
-
+    
+    async def async_upload(self, file):
+        if file.__class__.__name__== "UploadFile":
+            return await self.__file_upload(file)
+        return self.__base64_upload(file)
+    
     def remove(self, value):
         if value and os.path.exists(value):
             os.remove(value)
