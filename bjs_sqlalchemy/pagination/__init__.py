@@ -1,21 +1,16 @@
-class PageNoPagination:
+from bjs_sqlalchemy.pagination.mixin import (
+    
+    LimitPageMixin, LimitOffsetMixin
+)
+
+class PageNoPagination(LimitPageMixin):
     def __init__(self, params, queryset):
         self.queryset = queryset
         limit = params.get("limit", None)
         page = params.get("page", None)
         self.limit ,self.page_no = self._valid_limit_page(limit, page)
     
-    @staticmethod
-    def _valid_limit_page(limit, page):
-        limit = limit if type(limit) == int else (
-            int(limit) if limit and limit.isdigit() else None
-        )
-        page = page if type(page) == int else (
-            int(page) if page and page.isdigit() else 1
-        )
-        return limit, page
-    
-    async def __pagination(self):
+    def __pagination(self):
         pagination = {}
         pagination["count"] = self.queryset.count()
         total_page = pagination["count"] // self.limit
@@ -38,29 +33,19 @@ class PageNoPagination:
         data = {"results":query, "pagination":pagination}
         return data
 
-    async def main(self):
+    def main(self):
         if not self.limit:
             return {"results":self.queryset.all()}
-        return await self.__pagination()
+        return self.__pagination()
 
-class LimitOffSetPagination:
+class LimitOffSetPagination(LimitOffsetMixin):
     def __init__(self, params, queryset):
         self.queryset = queryset
         limit = params.get("limit", None)
         offset = params.get("offset", None)
         self.limit ,self.offset = self._valid_limit_offset(limit, offset)
     
-    @staticmethod
-    def _valid_limit_offset(limit, offset):
-        limit = limit if type(limit) == int else (
-            int(limit) if limit and limit.isdigit() else None
-        )
-        offset = offset if type(offset) == int else (
-            int(offset) if offset and offset.isdigit() else 0
-        )
-        return limit, offset
-    
-    async def __pagination(self):
+    def __pagination(self):
         pagination = {}
         pagination["count"] = self.queryset.count()
         total_page = pagination["count"] // self.limit
@@ -83,8 +68,8 @@ class LimitOffSetPagination:
         query = self.queryset.limit(self.limit).offset(self.offset).all()
         return {"results":query, "pagination":pagination}
 
-    async def main(self):
+    def main(self):
         if not self.limit:
             return {"results":self.queryset.all()}
-        return await self.__pagination()
+        return self.__pagination()
 
