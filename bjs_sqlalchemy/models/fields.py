@@ -1,13 +1,11 @@
+import os
+import re
+import random
+import base64
+from datetime import datetime
 from sqlalchemy import Column, Text, String, Integer, Boolean
 from sqlalchemy.sql.base import _NoArg
 from sqlalchemy.sql.schema import SchemaConst
-import base64
-import os
-import re
-from datetime import datetime
-import random
-import asyncio
-
 
 class File(Column):
     def __init__(
@@ -131,4 +129,4 @@ class TextField:
 class FileField:
     def __new__(cls, nullable=False, upload_to="media"):
         return File(Text, nullable=nullable, upload_to=upload_to)
-    
+
