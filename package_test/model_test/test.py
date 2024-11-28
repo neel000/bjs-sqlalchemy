@@ -58,9 +58,6 @@ class IntregrationTesting(TestClient):
         # UpdateData
         data.name = "Update Test Name"
         status, update_data = data.save(session=session,refresh=True)
-
-        print(status, update_data.name)
-        
         self.assertEqual(status, True)
         self.assertNotEqual(update_data.name, "Test Name")
         self.assertEqual(update_data.name, data.name)
