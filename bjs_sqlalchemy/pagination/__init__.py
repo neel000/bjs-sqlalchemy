@@ -1,5 +1,4 @@
 from bjs_sqlalchemy.pagination.mixin import (
-    
     LimitPageMixin, LimitOffsetMixin
 )
 

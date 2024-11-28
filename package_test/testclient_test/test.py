@@ -6,7 +6,6 @@ from sqlalchemy import func
 
 class TestClient(TS):
     database_url = "sqlite:///./testclient_test/database.db"
-    
     asyn_database_url = "sqlite+aiosqlite:///./testclient_test/database.db"
 
     def test_async(self):
