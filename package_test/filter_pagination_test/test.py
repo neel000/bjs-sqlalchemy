@@ -1,6 +1,3 @@
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from bjs_sqlalchemy.proxy_request import ProxyRequest
 from .models import(
     Users, Address, Contact, ContactDetail

@@ -38,5 +38,5 @@ class ContactDetail(Base):
     contact_type = Column(String)
     contact = relationship(Contact, back_populates="contact_detail")
 
-engine = models.create_engine(DATABASE_URL)
-models.Base.metadata.create_all(engine)
+# engine = models.create_engine(DATABASE_URL)
+# models.Base.metadata.create_all(engine)
