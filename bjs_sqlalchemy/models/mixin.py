@@ -1,6 +1,5 @@
 from sqlalchemy import insert
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-from sqlalchemy.orm.collections import InstrumentedList
 from .fields import File
 from sqlalchemy.orm.attributes import get_history
 
@@ -28,7 +27,6 @@ class TableFieldCheck:
         except:
             return False
  
-
 class HandleRemoveFile:
     def _file_remove_handle(self, data):
         for key, value in data.items():
@@ -310,4 +308,3 @@ class DeleteMixin(DeleteMethodRemoveFile):
         session.commit()
         session.close()
         return True, None
-

@@ -27,6 +27,7 @@ class FilterSet(GetField):
         "ilike": "ilike", 
         "not_like": "notlike",
         "not_ilike": "notilike",
+        "range":'__between__'
     }
 
     __operation = {**__valid_in_operation, **__not_valid_in_operation}
@@ -38,10 +39,24 @@ class FilterSet(GetField):
         self._filter_field = self.__class__.Meta.fields
     
     @staticmethod
+    def _between_op(attr, value):
+        json_data = FilterSet._valid_json_string(value)
+
+        if type(json_data) == list and len(json_data) == 2:
+            filter_func = attr.between(*json_data)
+            return (filter_func,)
+        
+        return ()
+
+    @staticmethod
     def _exact_query(key, model, value_list:list, op=None):
         val = value_list if len(value_list) >1 else value_list[0]
         op = op if op else "__eq__" if type(val) != list else "in_"
         attr = getattr(model, key)
+
+        if op == '__between__':
+            return FilterSet._between_op(attr=attr, value=val)
+        
         filter_func = getattr(attr, op)(val)
         return (filter_func,)
     
@@ -53,7 +68,6 @@ class FilterSet(GetField):
         except Exception as e:
             return string
         
-
     def _in_constrain(self, key, model, op, value_list):
         trim_data = []
 
